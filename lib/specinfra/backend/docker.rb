@@ -89,8 +89,11 @@ module Specinfra
       end
 
       def docker_run!(cmd, opts={})
-        # stdout, stderr, status = @container.exec(['/bin/sh', '-c', cmd])
-        stdout, stderr, status = Open3.popen3('sudo', 'lxc-attach', '-n', "\"$(docker inspect --format '{{.Id}}' #{@container.id})\"", '--', '/bin/sh', '-c', cmd);
+        if ENV['TRAVIS']
+          stdout, stderr, status = Open3.popen3('sudo', 'lxc-attach', '-n', "\"$(docker inspect --format '{{.Id}}' #{@container.id})\"", '--', '/bin/sh', '-c', cmd)
+        else
+          stdout, stderr, status = @container.exec(['/bin/sh', '-c', cmd])
+        end
 
         CommandResult.new :stdout => stdout.join, :stderr => stderr.join,
         :exit_status => status
