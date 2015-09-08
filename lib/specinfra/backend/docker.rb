@@ -89,7 +89,7 @@ module Specinfra
       end
 
       def docker_run!(cmd, opts={})
-        if ENV['TRAVIS']
+        if ENV['CIRCLECI']
           stdout, stderr, status = Open3.capture3('sudo', 'lxc-attach', '-n', "\"$(docker inspect --format '{{.Id}}' #{@container.id})\"", '--', '/bin/sh', '-c', cmd)
           # stdout, stderr, status = Open3.capture3('docker', 'exec', @container.id, '/bin/sh', '-c', cmd)
           status = status.success? ? 0 : 1
@@ -105,7 +105,7 @@ module Specinfra
       rescue => e
         @container.kill
 
-        if ENV['TRAVIS']
+        if ENV['CIRCLECI']
           err = stderr.nil? ? ([e.message] + e.backtrace) : stderr
           out = stdout.nil? ? '' : stdout
           CommandResult.new :stdout => out, :stderr => err, :exit_status => (status || 1)
