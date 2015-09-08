@@ -90,25 +90,30 @@ module Specinfra
 
       def docker_run!(cmd, opts={})
         if ENV['TRAVIS']
-          stdout, stderr, status, wait_thr = Open3.popen3('sudo', 'lxc-attach', '-n', "\"$(docker inspect --format '{{.Id}}' #{@container.id})\"", '--', '/bin/sh', '-c', cmd)
-          stdout = stdout.read
-          stderr = stderr.read
+          stdout, stderr, status = Open3.capture3('sudo', 'lxc-attach', '-n', "\"$(docker inspect --format '{{.Id}}' #{@container.id})\"", '--', '/bin/sh', '-c', cmd)
+          # stdout, stderr, status = Open3.capture3('docker', 'exec', @container.id, '/bin/sh', '-c', cmd)
           status = status.success? ? 0 : 1
           puts "EXEC stdout: #{stdout}"
           puts "EXEC stderr: #{stderr}"
+          CommandResult.new :stdout => stdout, :stderr => stderr, :exit_status => status
         else
           stdout, stderr, status = @container.exec(['/bin/sh', '-c', cmd])
+          CommandResult.new :stdout => stdout.join, :stderr => stderr.join, :exit_status => status
         end
-
-        CommandResult.new :stdout => stdout.join, :stderr => stderr.join,
-        :exit_status => status
       rescue ::Docker::Error::DockerError => e
         raise
       rescue => e
         @container.kill
-        err = stderr.nil? ? ([e.message] + e.backtrace) : stderr
-        CommandResult.new :stdout => [stdout].join, :stderr => err.join,
-        :exit_status => (status || 1)
+
+        if ENV['TRAVIS']
+          err = stderr.nil? ? ([e.message] + e.backtrace) : stderr
+          out = stdout.nil? ? '' : stdout
+          CommandResult.new :stdout => out, :stderr => err, :exit_status => (status || 1)
+        else
+          err = stderr.nil? ? ([e.message] + e.backtrace) : stderr
+          CommandResult.new :stdout => [stdout].join, :stderr => err.join,
+          :exit_status => (status || 1)
+        end
       end
 
       def get_or_pull_image(name)
