@@ -90,7 +90,7 @@ module Specinfra
 
       def docker_run!(cmd, opts={})
         if ENV['CIRCLECI']
-          stdout, stderr, status = Open3.capture3('sudo', 'lxc-attach', '-n', @container.id, '--', '/bin/bash', '-c', cmd)
+          stdout, stderr, status = Open3.capture3('sudo', 'lxc-attach', '-n', @container.id, '--', '/bin/bash', '-c', "if [ -f \"/etc/profile\" ]; then source /etc/profile; fi && #{cmd}")
           status = status.success? ? 0 : 1
           CommandResult.new :stdout => stdout, :stderr => stderr, :exit_status => status
         else
