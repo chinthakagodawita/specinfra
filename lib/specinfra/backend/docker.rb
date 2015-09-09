@@ -91,10 +91,7 @@ module Specinfra
       def docker_run!(cmd, opts={})
         if ENV['CIRCLECI']
           stdout, stderr, status = Open3.capture3('sudo', 'lxc-attach', '-n', @container.id, '--', '/bin/sh', '-c', cmd)
-          # stdout, stderr, status = Open3.capture3('docker', 'exec', @container.id, '/bin/sh', '-c', cmd)
           status = status.success? ? 0 : 1
-          puts "EXEC stdout: #{stdout}"
-          puts "EXEC stderr: #{stderr}"
           CommandResult.new :stdout => stdout, :stderr => stderr, :exit_status => status
         else
           stdout, stderr, status = @container.exec(['/bin/sh', '-c', cmd])
