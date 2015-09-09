@@ -61,7 +61,7 @@ module Specinfra
         opts = { 'Image' => current_image.id }
 
         if current_image.json["Config"]["Cmd"].nil? && current_image.json["Config"]["Entrypoint"].nil?
-          opts.merge!({'Cmd' => ['/bin/sh']})
+          opts.merge!({'Cmd' => ['/bin/bash']})
         end
 
         opts.merge!({'OpenStdin' => true})
@@ -90,11 +90,11 @@ module Specinfra
 
       def docker_run!(cmd, opts={})
         if ENV['CIRCLECI']
-          stdout, stderr, status = Open3.capture3('sudo', 'lxc-attach', '-n', @container.id, '--', '/bin/sh', '-c', cmd)
+          stdout, stderr, status = Open3.capture3('sudo', 'lxc-attach', '-n', @container.id, '--', '/bin/bash', '-c', cmd)
           status = status.success? ? 0 : 1
           CommandResult.new :stdout => stdout, :stderr => stderr, :exit_status => status
         else
-          stdout, stderr, status = @container.exec(['/bin/sh', '-c', cmd])
+          stdout, stderr, status = @container.exec(['/bin/bash', '-c', cmd])
           CommandResult.new :stdout => stdout.join, :stderr => stderr.join, :exit_status => status
         end
       rescue ::Docker::Error::DockerError => e
